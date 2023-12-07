@@ -1,0 +1,7 @@
+body{
+    overflow: hidden;
+    margin: 0;
+
+    background: red;
+    background: linear-gradient(0deg,rgb(231, 184, 184) 17%,rgb(157, 157, 234) 35%,black);
+}

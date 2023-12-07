@@ -1,26 +1,48 @@
-import * as THREE from 'three';
+// main.js
+import * as THREE from 'https://unpkg.com/three/build/three.module.js';
 
+// Scene 생성
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
-
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
-
+// Camera 생성
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 5;
 
-function animate() {
-	requestAnimationFrame( animate );
+// Renderer 생성
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-	cube.rotation.x += 0.01;
-	cube.rotation.y += 0.01;
+// 폰트 로딩
+const fontLoader = new THREE.FontLoader();
+let font;
+fontLoader.load('https://unpkg.com/three/examples/fonts/gentilis_bold.typeface.json', (loadedFont) => {
+  font = loadedFont;
 
-	renderer.render( scene, camera );
-}
+  // 텍스트 생성
+  const textGeometry = new THREE.TextBufferGeometry('Hello, 3D Text!', {
+    font: font,
+    size: 0.5,
+    height: 0.1,
+    curveSegments: 12,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.02,
+    bevelOffset: 0,
+    bevelSegments: 5,
+  });
 
-animate();
+  const textMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+  // Scene에 추가
+  scene.add(textMesh);
+
+  // 렌더링
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+
+  animate();
+});

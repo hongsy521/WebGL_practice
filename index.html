@@ -1,31 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<title>My first three.js app</title>
-		<style>
-			body { margin: 0; }
-            #info {
-	position: absolute;
-	top: 10px;
-	width: 100%;
-	text-align: center;
-	z-index: 100;
-	display:block;
-    color: white;
-}
-		</style>
-        <script type="importmap">
-            {
-              "imports": {
-                "three": "https://unpkg.com/three@<version>/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@<version>/examples/jsm/"
-              }
-            }
-          </script>
-	</head>
-	<body>
-        <div id="info">야호</div>
-		<script type="module" src="/main.js"></script>
-	</body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Text Example</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script type="module">
+    import * as THREE from '../modules/three.module.js';
+    import { OrbitControls } from '../modules/OrbitControls.js'; 
+    import { FontLoader } from '../modules/FontLoader.js'; 
+    import { TextGeometry } from '../modules/TextGeometry.js'; 
+
+    let glow = 0.5;  // material의 발광 강도 변수 초기화
+
+    const scene = new THREE.Scene();  // Three.js 씬 생성
+
+    const camera = new THREE.PerspectiveCamera( // 지정된 매개변수를 사용하여 원근 카메라 생성
+      75,
+      window.innerWidth / window.innerHeight,
+      1,   // 근거리
+      1500 // 원거리
+    );
+    camera.position.set(-30, 50, 100);  // camera 위치 설정
+    camera.lookAt(0, 0, 0);             // camera 바라보는 대상 설정
+
+    // renderer 객체 생성
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio);  // 픽셀 비율 설정
+    renderer.setSize(window.innerWidth, window.innerHeight);  // renderer 크기 설정
+    renderer.outputEncoding = THREE.sRGBEncoding;  // 색상 공간 설정
+    document.body.appendChild(renderer.domElement);  // rederer DOMElement 문서에 추가
+
+    renderer.shadowMap.enabled = true;   // 그림자 맵 활성화
+
+    const rectLight = new THREE.RectAreaLight(0xf9d71c, glow, 150, 30); // RectAreaLight를 사용한 사각형 라이트 생성
+    scene.add(rectLight);
+    rectLight.position.set(5, 23, 5);
+    rectLight.lookAt(0, 0, 120);
+
+    const pointLight = new THREE.PointLight(0xffffff, 0.3, 100); // PointLight를 사용한 점 라이트 생성
+    pointLight.position.set(0, 50, -50);
+    scene.add(pointLight);
+    // 그림자 투사 설정
+    pointLight.castShadow = true;
+
+    const ground = new THREE.Mesh(  // mesh Geometry와 meterial을 사용한 지면 생성
+      new THREE.PlaneGeometry(500, 500),
+      new THREE.MeshBasicMaterial({ color: 0x4e8f38 }),
+      //new THREE.MeshStandardMaterial({ color: 0x4e8f38 })
+    );
+    scene.add(ground);
+    ground.rotateX(-Math.PI / 2); // 지면을 X축 주위로 회전
+    ground.receiveShadow = true;  // 그림자 수신 설정
+
+    const controls = new OrbitControls(camera, renderer.domElement); // OrbitControls를 사용한 카메라 컨트롤 생성
+
+    let text = "Hello";
+    let textMesh;
+
+    const loader = new FontLoader();  // FontLoader를 사용하여 폰트 로딩
+
+    // 지정된 경로에서 폰트 로딩 후 실행되는 콜백 함수
+    loader.load("../fonts/Potta One_Regular.json", function (font) { 
+      
+      if (!font) {
+    console.error("Failed to load font.");
+    return;
+    }
+    // TextGeometry를 사용하여 3D 텍스트의 Geometry 생성
+      const tGeometry = new TextGeometry(text, {
+        font: font,
+        size: 40,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 5,
+        bevelSize: 2,
+        bevelOffset: 2,
+        bevelSegments: 15
+      });
+      // 3D 텍스트의 메쉬 생성 및 meterial 설정
+      textMesh = new THREE.Mesh(tGeometry, [
+        new THREE.MeshPhongMaterial({ emissive: 0xf9d71c, emissiveIntensity: glow }),
+        new THREE.MeshPhongMaterial({ color: 0xffffff })
+      ]);
+
+      scene.add(textMesh);  // 씬에 텍스트 메쉬 추가
+      textMesh.position.set(-75, 3, 0);  // 텍스트 메쉬 위치 설정
+
+      textMesh.castShadow = true;  // 그림자 투사 설정
+      textMesh.receiveShadow = true; // 그림자 수신 설정
+      animate();
+    });
+    // 창 크기 변경 시 이벤트 리스너 추가
+    window.addEventListener('resize', onWindowResize);
+
+    animate();
+
+    function animate() {
+      requestAnimationFrame(animate);  // 애니메이션 프레임 요청
+      if (textMesh) {  // 텍스트 메쉬가 존재하면 실행
+      //glow = Math.random() - 0.6; // 발광 강도 랜덤값 적용
+      //textMesh.material[0].emissiveIntensity = glow;
+      rectLight.intensity = glow;  // RectAreaLight의 강도 설정
+      renderer.render(scene, camera); // 씬을 렌더링
+      }
+    }
+    // 창 크기 변경 시 호출되는 함수
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight; // 카메라 비율 업데이트
+      camera.updateProjectionMatrix(); // renderer 크기 업데이트
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  </script>
+</head>
+<body>
+</body>
 </html>
